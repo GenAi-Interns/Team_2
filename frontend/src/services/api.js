@@ -1,0 +1,29 @@
+import axios from "axios";
+
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+export const API_URL = rawApiUrl.replace(/\/+$/, "");
+const rawApiBase = import.meta.env.VITE_API_BASE_URL || `${API_URL}/api/matcher`;
+export const API_BASE = rawApiBase.replace(/([^:]\/)\/+/g, "$1").replace(/\/+$/, "");
+export const SESSION_KEY = "prores_session";
+
+export function createAuthorizedApi(token = "") {
+  return axios.create({
+    baseURL: API_BASE,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+}
+
+export async function restoreStoredSession() {
+  const stored = window.localStorage.getItem(SESSION_KEY);
+  if (!stored) {
+    return null;
+  }
+
+  const parsed = JSON.parse(stored);
+  const response = await axios.get(`${API_BASE}/auth/session`, {
+    headers: { Authorization: `Bearer ${parsed.token}` },
+  });
+  const auth = response.data.auth;
+  window.localStorage.setItem(SESSION_KEY, JSON.stringify(auth));
+  return auth;
+}
